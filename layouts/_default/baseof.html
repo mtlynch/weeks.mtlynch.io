@@ -11,7 +11,7 @@
     </title>
     <link rel="stylesheet" href="/css/style.css" />
 
-    {{ if not hugo.IsServer }}
+    {{ if hugo.IsProduction }}
       <script
         defer
         data-domain="weeks.mtlynch.io"
