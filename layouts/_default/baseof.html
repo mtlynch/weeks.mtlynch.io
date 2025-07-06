@@ -10,6 +10,21 @@
       {{ end }}
     </title>
     <link rel="stylesheet" href="/css/style.css" />
+
+    {{ if not hugo.IsServer }}
+      <script
+        defer
+        data-domain="weeks.mtlynch.io"
+        src="https://plausible.io/js/script.js"
+      ></script>
+      <script>
+        window.plausible =
+          window.plausible ||
+          function () {
+            (window.plausible.q = window.plausible.q || []).push(arguments);
+          };
+      </script>
+    {{ end }}
   </head>
   <body>
     {{ block "page" . }}{{ end }}
