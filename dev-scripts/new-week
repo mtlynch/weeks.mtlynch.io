@@ -52,7 +52,17 @@ fetch_github_prs() {
         return 0
     fi
 
-    local username="mtlynch"
+    # Get username from GitHub token
+    echo "Fetching GitHub username from token..." >&2
+    local username=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+        "https://api.github.com/user" | jq -r '.login // empty')
+
+    if [ -z "$username" ]; then
+        echo "Warning: Could not fetch GitHub username from token, skipping GitHub activity" >&2
+        return 0
+    fi
+
+    echo "GitHub username: $username" >&2
     local since_date="$PREVIOUS_FRIDAY"
 
     # Query for authored PRs
