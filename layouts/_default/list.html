@@ -5,33 +5,6 @@
     {{ end }}
     <h1>{{ .Title }}</h1>
     {{ .Content }}
-    {{ range .Sections }}
-      {{ if ne .Section "weeks" }}
-        <h2><a href="{{ .RelPermalink }}">{{ .Title }}</a></h2>
-        <ul>
-          {{ range .Pages }}
-            <li>
-              <a href="{{ .RelPermalink }}">
-                {{ if .Title }}
-                  {{ .Title }}
-                {{ else }}
-                  {{ $path := .RelPermalink }}
-                  {{ $parts := split $path "/" }}
-                  {{ range $parts }}
-                    {{ if (findRE
-                      "^\\d{4}-\\d{2}-\\d{2}$" .)
-                    }}
-                      Week ending in
-                      {{ . }}
-                    {{ end }}
-                  {{ end }}
-                {{ end }}
-              </a>
-            </li>
-          {{ end }}
-        </ul>
-      {{ end }}
-    {{ end }}
     {{ $weeksSection := .Site.GetPage "section" "weeks" }}
     {{ if $weeksSection }}
       <ol reversed>
@@ -56,31 +29,6 @@
           </li>
         {{ end }}
       </ol>
-    {{ end }}
-    {{ if .RegularPages }}
-      <h2>Other</h2>
-      <ul>
-        {{ range .RegularPages }}
-          <li>
-            <a href="{{ .RelPermalink }}">
-              {{ if .Title }}
-                {{ .Title }}
-              {{ else }}
-                {{ $path := .RelPermalink }}
-                {{ $parts := split $path "/" }}
-                {{ range $parts }}
-                  {{ if (findRE
-                    "^\\d{4}-\\d{2}-\\d{2}$" .)
-                  }}
-                    Week ending in
-                    {{ . }}
-                  {{ end }}
-                {{ end }}
-              {{ end }}
-            </a>
-          </li>
-        {{ end }}
-      </ul>
     {{ end }}
   </article>
 {{ end }}
