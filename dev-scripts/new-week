@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+# Exit build script on first failure.
+set -e
+
+# Echo commands to stdout.
+set -x
+
+# Exit on unset variable.
+set -u
+
+# Get current day of week (1=Monday, 5=Friday)
+DAY_OF_WEEK=$(date +%u)
+
+if [ "$DAY_OF_WEEK" -eq 5 ]; then
+    # It's Friday, use today
+    DAYS_UNTIL_FRIDAY=0
+else
+    # Calculate days until next Friday
+    DAYS_UNTIL_FRIDAY=$((5 - DAY_OF_WEEK))
+    if [ "$DAYS_UNTIL_FRIDAY" -lt 0 ]; then
+        DAYS_UNTIL_FRIDAY=$((DAYS_UNTIL_FRIDAY + 7))
+    fi
+fi
+
+FRIDAY_DATE=$(date -d "+${DAYS_UNTIL_FRIDAY} days" +%Y-%m-%d)
+readonly FRIDAY_DATE
+
+EST_PUBLISH_DATE=$(date -d "+${DAYS_UNTIL_FRIDAY} days" +%Y-%m-%dT00:00:00%:z)
+readonly EST_PUBLISH_DATE
+
+readonly WEEK_PATH="content/weeks/${FRIDAY_DATE}/index.md"
+
+hugo new "${WEEK_PATH}" \
+  --clock "${EST_PUBLISH_DATE}"
+
+code "${WEEK_PATH}"
