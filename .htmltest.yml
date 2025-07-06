@@ -1,0 +1,14 @@
+DirectoryPath: "public"
+CheckExternal: false
+CheckImages: true
+CheckImageAlt: false
+CheckInternalLinks: true
+CheckInternalHash: true
+CheckDoctype: true
+CheckFavicon: false
+IgnoreURLs:
+  - "^https?://"
+OutputLevel: 2 # Show errors and warnings
+OutputDir: "/tmp"
+EnforceHTTPS: false
+IgnoreInternalEmptyHash: true

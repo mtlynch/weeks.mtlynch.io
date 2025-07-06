@@ -1,0 +1,335 @@
+#!/usr/bin/env bash
+#
+# Import weekly updates from WhatGotDone export data.
+# Processes zip files or directories containing markdown files, downloads
+# associated images, and converts them to lossless WebP format.
+
+# Exit build script on first failure.
+set -e
+
+# Exit on unset variable.
+set -u
+
+# Configuration for download retries
+readonly MAX_RETRY_ATTEMPTS=5
+readonly INITIAL_WAIT_TIME=2
+
+# Initialize array to track failed downloads
+declare -a FAILED_URLS=()
+
+#######################################
+# Download files with retry logic and exponential backoff.
+# Globals:
+#   MAX_RETRY_ATTEMPTS
+#   INITIAL_WAIT_TIME
+# Arguments:
+#   URL to download
+#   Output file path
+# Returns:
+#   0 if download successful, 1 if all attempts failed
+#######################################
+download_with_retry() {
+  local url="$1"
+  local output_file="$2"
+  local wait_time="${INITIAL_WAIT_TIME}"
+  local attempt
+
+  for attempt in $(seq 1 "${MAX_RETRY_ATTEMPTS}"); do
+    if wget -q "${url}" -O "${output_file}"; then
+      return 0  # Success
+    fi
+
+    if (( attempt < MAX_RETRY_ATTEMPTS )); then
+      echo "        Attempt ${attempt} failed, waiting ${wait_time}s before retry..."
+      sleep "${wait_time}"
+      (( wait_time *= 2 ))  # Exponential backoff
+    else
+      echo "        All ${MAX_RETRY_ATTEMPTS} attempts failed"
+    fi
+  done
+
+  return 1  # All attempts failed
+}
+
+#######################################
+# Convert image to lossless WebP format using ImageMagick.
+# Arguments:
+#   Input file path
+#   Output file path
+# Returns:
+#   0 if conversion successful, 1 if failed
+#######################################
+convert_to_webp() {
+  local input_file="$1"
+  local output_file="$2"
+
+  if magick "${input_file}" -define webp:lossless=true -strip "${output_file}"; then
+    echo "      ✓ Converted to WebP: $(basename "${output_file}")"
+    # Remove the original downloaded file
+    rm -f "${input_file}"
+    return 0
+  else
+    echo "      ✗ Failed to convert ${input_file} to WebP"
+    return 1
+  fi
+}
+
+#######################################
+# Validate and process input path (zip file or directory).
+# Globals:
+#   INPUT_PATH
+#   SOURCE_DIR
+#   TEMP_DIR
+# Arguments:
+#   Input path to validate
+# Returns:
+#   0 if valid, exits with 1 if invalid
+#######################################
+process_input_path() {
+  local input_path="$1"
+
+  # Validate input path exists
+  if [[ ! -e "${input_path}" ]]; then
+    echo "Error: Input path '${input_path}' does not exist" >&2
+    exit 1
+  fi
+
+  # Check if input is a zip file or directory
+  if [[ "${input_path}" =~ \.zip$ ]]; then
+    echo "Detected zip file: ${input_path}"
+
+    # Create temporary directory for extraction
+    TEMP_DIR="$(mktemp -d)"
+    echo "Created temporary directory: ${TEMP_DIR}"
+
+    # Extract zip file
+    echo "Extracting zip file..."
+    if ! unzip -q "${input_path}" -d "${TEMP_DIR}"; then
+      echo "Error: Failed to extract zip file '${input_path}'" >&2
+      exit 1
+    fi
+
+    # The zip file contains date folders at the root, so use the temp directory
+    # directly
+    SOURCE_DIR="${TEMP_DIR}"
+    echo "Using extracted content from: ${SOURCE_DIR}"
+  elif [[ -d "${input_path}" ]]; then
+    echo "Detected directory: ${input_path}"
+    SOURCE_DIR="${input_path}"
+  else
+    echo "Error: Input path '${input_path}' is neither a directory nor a zip file" >&2
+    exit 1
+  fi
+}
+
+#######################################
+# Copy source directories to content/weeks destination.
+# Globals:
+#   SOURCE_DIR
+# Arguments:
+#   None
+#######################################
+copy_source_directories() {
+  local subdir
+  local dir_name
+  local dest_dir
+
+  echo "Importing from: ${SOURCE_DIR}"
+  echo "Destination: content/weeks/"
+
+  # Ensure the content/weeks directory exists
+  mkdir -p content/weeks
+
+  # Iterate through each subdirectory in the source directory
+  for subdir in "${SOURCE_DIR}"/*/; do
+    if [[ -d "${subdir}" ]]; then
+      # Extract the subdirectory name (e.g., "2020-05-01")
+      dir_name="$(basename "${subdir}")"
+      dest_dir="content/weeks/${dir_name}"
+
+      echo "Processing subdirectory: ${dir_name}"
+      echo "Destination: ${dest_dir}"
+
+      # Check if destination already exists
+      if [[ -d "${dest_dir}" ]]; then
+        echo "Warning: Destination directory '${dest_dir}' already exists. Removing it first."
+        rm -rf "${dest_dir}"
+      fi
+
+      # Copy the subdirectory to content/weeks
+      cp -r "${subdir}" "${dest_dir}"
+      echo "✓ Copied ${dir_name} to ${dest_dir}"
+    fi
+  done
+}
+
+#######################################
+# Process a single image URL found in markdown file.
+# Globals:
+#   FAILED_URLS
+#   MAX_RETRY_ATTEMPTS
+# Arguments:
+#   URL to process
+#   Markdown file path
+# Returns:
+#   0 on success, 1 on failure
+#######################################
+process_image_url() {
+  local url="$1"
+  local file="$2"
+  local original_filename
+  local base_filename
+  local file_dir
+  local temp_file
+  local target_file
+
+  # Extract filename from URL (everything after the last /)
+  original_filename="$(basename "${url}")"
+
+  # Remove extension and use .webp instead
+  base_filename="${original_filename%.*}"
+  echo "    - ${url} -> ${base_filename}.webp"
+
+  # Download the image to the same directory as the markdown file
+  file_dir="$(dirname "${file}")"
+  temp_file="$(mktemp)"
+  target_file="${file_dir}/${base_filename}.webp"
+
+  # Check if WebP file already exists
+  if [[ -f "${target_file}" ]]; then
+    echo "      ✓ File ${base_filename}.webp already exists, skipping download"
+    # Still update the reference in markdown
+    sed -i "s|${url}|${base_filename}.webp|g" "${file}"
+    echo "      ✓ Updated reference in markdown"
+    return 0
+  fi
+
+  # Download the image to temporary file
+  if download_with_retry "${url}" "${temp_file}"; then
+    echo "      ✓ Downloaded ${original_filename}"
+
+    # Convert to WebP
+    if convert_to_webp "${temp_file}" "${target_file}"; then
+      # Replace the URL with the WebP filename in the markdown
+      sed -i "s|${url}|${base_filename}.webp|g" "${file}"
+      echo "      ✓ Updated reference in markdown"
+      return 0
+    else
+      # Clean up temp file if conversion failed
+      rm -f "${temp_file}"
+      FAILED_URLS+=("${url}")
+      return 1
+    fi
+  else
+    echo "      ✗ Failed to download ${original_filename} from ${url} after ${MAX_RETRY_ATTEMPTS} attempts"
+    # Clean up temp file if download failed
+    rm -f "${temp_file}"
+    FAILED_URLS+=("${url}")
+    return 1
+  fi
+}
+
+#######################################
+# Process all markdown files to update headings and download images.
+# Globals:
+#   FAILED_URLS
+# Arguments:
+#   None
+#######################################
+process_markdown_files() {
+  local file
+  local temp_urls
+  local temp_content
+  local url
+
+  # Process markdown files in all copied directories
+  find "content/weeks" -name "*.md" -type f | while read -r file; do
+    echo "Processing: ${file}"
+
+    # Replace heading levels (# -> ## at start of line only)
+    sed -i 's/^#/##/g' "${file}"
+    echo "  ✓ Updated heading levels"
+
+    # Find and process image URLs
+    # Create a temporary file to store URLs found in this file
+    temp_urls="$(mktemp)"
+    temp_content="$(mktemp)"
+
+    # Create a copy of the file content with backticked content temporarily
+    # removed. This prevents URLs within backticks from being extracted
+    sed 's/`[^`]*`//g' "${file}" > "${temp_content}"
+
+    # Extract URLs from both possible domains (excluding those that were in
+    # backticks)
+    grep -oE 'https://(media\.whatgotdone\.com|storage\.googleapis\.com/media\.whatgotdone\.com)/uploads/[^)[:space:]]+' \
+      "${temp_content}" > "${temp_urls}" 2>/dev/null || true
+
+    if [[ -s "${temp_urls}" ]]; then
+      echo "  Found image URLs to process:"
+
+      while read -r url; do
+        process_image_url "${url}" "${file}"
+      done < "${temp_urls}"
+    else
+      echo "  No image URLs found"
+    fi
+
+    # Clean up temporary files
+    rm -f "${temp_urls}" "${temp_content}"
+  done
+}
+
+#######################################
+# Display final import results and any failed downloads.
+# Globals:
+#   FAILED_URLS
+# Arguments:
+#   None
+#######################################
+display_results() {
+  echo ""
+
+  # Report failed downloads
+  if (( ${#FAILED_URLS[@]} == 0 )); then
+    echo "🎉 Import completed successfully!"
+    echo "All images were downloaded and converted to WebP format."
+  else
+    echo "⚠️  Import completed with some failed downloads:"
+    echo "The following URLs failed to download:"
+    local url
+    for url in "${FAILED_URLS[@]}"; do
+      echo "  - ${url}"
+    done
+    echo ""
+    echo "Total failed downloads: ${#FAILED_URLS[@]}"
+  fi
+
+  echo ""
+  echo "All processed images are now stored locally as WebP files."
+  echo "Markdown files have been updated to reference the local images."
+  echo "Imported content is now available in: content/weeks/"
+}
+
+#######################################
+# Main function to orchestrate the import process.
+# Arguments:
+#   Source directory or zip file path
+#######################################
+main() {
+  # Check if input argument is provided
+  if (( $# == 0 )); then
+    echo "Usage: $0 <source-directory-or-zip-file>" >&2
+    echo "Example: $0 /path/to/whatgotdone-export/" >&2
+    echo "Example: $0 /path/to/whatgotdone-export.zip" >&2
+    exit 1
+  fi
+
+  local input_path="$1"
+
+  process_input_path "${input_path}"
+  copy_source_directories
+  process_markdown_files
+  display_results
+}
+
+main "$@"

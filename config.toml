@@ -1,0 +1,32 @@
+baseurl = "https://weeks.mtlynch.io"
+title = "Michael's Weekly Updates"
+languagecode = "en"
+defaultcontentlanguage = "en"
+pluralizelisttitles = false
+
+timeout = 300000
+
+# We don't want to canonify URLs because it prevents us from
+# deploying drafts of the site to alternate hosts.
+canonifyurls = false
+
+buildFuture = true
+
+[markup]
+  [markup.highlight]
+    style = "native"
+  [markup.goldmark.renderer]
+    # Allow Markdown to include embedded HTML.
+    unsafe= true
+
+[permalinks]
+    weeks = "/:contentbasename/"
+
+[params]
+    dateFormat = "January 2, 2006"
+    author = "Michael Lynch"
+    description = "Updates about Michael Lynch's work every week"
+    twitter = "deliberatecoder"
+
+    hidecredits = false
+    hidecopyright = false

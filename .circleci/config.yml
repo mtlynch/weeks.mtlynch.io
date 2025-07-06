@@ -1,0 +1,102 @@
+version: 2.1
+jobs:
+  check-whitespace:
+    docker:
+      - image: cimg/base:stable
+    resource_class: small
+    steps:
+      - checkout
+      - run:
+          name: Check for trailing whitespace
+          command: ./dev-scripts/check-trailing-whitespace
+      - run:
+          name: Check for trailing newlines
+          command: ./dev-scripts/check-trailing-newline
+  build:
+    docker:
+      - image: hugomods/hugo:0.147.5
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ./
+      - restore_cache:
+          keys:
+            - resources-gen-v{{ .Environment.RESOURCES_CACHE_VERSION }}
+      - run:
+          name: Build prod site
+          command: hugo version && hugo --minify
+      - persist_to_workspace:
+          root: ./
+          paths:
+            - dev-scripts
+            - public
+            - netlify.toml
+            - .htmltest.yml
+      - save_cache:
+          key: resources-gen-v{{ .Environment.RESOURCES_CACHE_VERSION }}
+          paths:
+            - resources
+  check_html:
+    docker:
+      - image: wjdp/htmltest:v0.17.0
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: ./
+      - run:
+          name: Run htmltest
+          command: htmltest
+  publish_draft:
+    docker:
+      - image: cimg/node:18.14.1
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: ./
+      # This is a hack to get rid of the <base> tag, which prevents the blog from rendering
+      # properly on Netlify's draft URL because it hardcodes the weeks.mtlynch.io domain.
+      - run:
+          name: Remove base tag from generated HTML
+          command: find public -name "*.html" -exec sed -i -e 's/<base[^>]*>//g' {} +
+      - run:
+          name: Install netlify CLI
+          command: npm install netlify-cli --save-dev
+      - run:
+          name: Deploy a live draft
+          command: ./node_modules/.bin/netlify deploy --dir=public --site="${NETLIFY_SITE_ID}"
+  deploy:
+    docker:
+      - image: cimg/node:18.14.1
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: ./
+      - run:
+          name: Install netlify CLI
+          command: npm install netlify-cli --save-dev
+      - run:
+          name: Deploy to production
+          command: ./node_modules/.bin/netlify deploy --dir=public --site="${NETLIFY_SITE_ID}" --prod
+workflows:
+  version: 2
+  test-deploy:
+    jobs:
+      - check-whitespace
+      - build
+      - check_html:
+          requires:
+            - build
+      - publish_draft:
+          requires:
+            - build
+          filters:
+            branches:
+              ignore: master
+      - deploy:
+          requires:
+            - check-whitespace
+            - build
+            - check_html
+          filters:
+            branches:
+              only: master

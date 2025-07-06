@@ -1,0 +1,215 @@
+/* CSS Variables for colors */
+:root {
+  --paradise-pink: #ea1f4b;
+  --paradise-pink-light: #ef5778;
+}
+
+html {
+  font-size: 62.5%;
+}
+
+body {
+  font-size: 1.6rem;
+  line-height: 1.5;
+}
+
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 3.8rem 0 0.6rem;
+}
+
+h1 {
+  font-size: 3.2rem;
+}
+
+h2 {
+  font-size: 2.5rem;
+}
+
+p,
+ul,
+ol {
+  font-size: 1.8rem;
+}
+
+a {
+  text-decoration: none;
+  color: var(--paradise-pink);
+}
+
+a:hover {
+  color: var(--paradise-pink-light);
+}
+
+article {
+  padding: 2rem 1rem;
+  max-width: 70ch;
+  margin: 0 auto;
+}
+
+/* Additional basic styling for better readability */
+body {
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
+    Cantarell, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #fff;
+  color: #333;
+}
+
+code {
+  background-color: #f4f4f4;
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
+}
+
+pre {
+  background-color: #f4f4f4;
+  padding: 1rem;
+  border-radius: 5px;
+  overflow-x: auto;
+}
+
+pre code {
+  background-color: transparent;
+  padding: 0;
+}
+
+/* Week navigation styling */
+.week-navigation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 2rem 0;
+  padding: 1rem 0;
+  border-top: 1px solid #e0e0e0;
+  border-bottom: 1px solid #e0e0e0;
+  gap: 0.5rem;
+}
+
+.nav-link {
+  font-size: 1.8rem;
+  font-weight: 500;
+  text-decoration: none;
+  color: var(--paradise-pink);
+  padding: 0.5rem 0.8rem;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  min-width: 2.5rem;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-link:hover {
+  color: var(--paradise-pink-light);
+  background-color: #f8f8f8;
+}
+
+.nav-disabled {
+  visibility: hidden;
+}
+
+/* Specific styling for first/last navigation arrows */
+.nav-first,
+.nav-last {
+  font-size: 2rem;
+}
+
+/* Group left arrows closer together */
+.nav-prev {
+  margin-left: -0.3rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  .week-navigation {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+    gap: 0.8rem;
+    padding: 1.5rem 0;
+    margin: 2rem 0;
+  }
+
+  .nav-link {
+    min-height: 48px;
+    padding: 1.2rem 0.8rem;
+    font-size: 1.6rem;
+    border: 1px solid #e0e0e0;
+    background-color: #f8f8f8;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-weight: 500;
+  }
+
+  .nav-link:hover {
+    background-color: #f0f0f0;
+    border-color: var(--paradise-pink);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .nav-link:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+
+  .nav-disabled {
+    visibility: visible;
+    opacity: 0.3;
+    cursor: not-allowed;
+    background-color: #f5f5f5;
+    color: #999;
+    border-color: #ddd;
+  }
+
+  .nav-disabled:hover {
+    background-color: #f5f5f5;
+    border-color: #ddd;
+    transform: none;
+    box-shadow: none;
+  }
+
+  /* Grid positioning for logical layout */
+  .nav-prev {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .nav-next {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .nav-first {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .nav-last {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  /* Remove the margin adjustment that was for the old layout */
+  .nav-prev {
+    margin-left: 0;
+  }
+
+  /* Ensure consistent font sizes in grid */
+  .nav-first,
+  .nav-last {
+    font-size: 1.6rem;
+  }
+}

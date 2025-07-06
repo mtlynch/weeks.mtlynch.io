@@ -1,0 +1,376 @@
+#!/usr/bin/env bash
+#
+# Find duplicate WebP files and delete copies, updating references to originals.
+# Considers the original as the file that appears earliest in order of file path date.
+
+# Exit build script on first failure.
+set -e
+
+# Exit on unset variable.
+set -u
+
+# Global variables
+declare -A FILE_CHECKSUMS=()
+declare -a DUPLICATE_GROUPS=()
+declare -a MARKDOWN_FILES_TO_UPDATE=()
+declare -a FILES_TO_DELETE=()
+EXECUTE_MODE=false
+TEMP_DIR=""
+
+#######################################
+# Display usage information.
+# Arguments:
+#   None
+#######################################
+usage() {
+  cat << EOF
+Usage: $0 [OPTIONS]
+
+Find duplicate WebP files and delete copies, updating references to originals.
+
+OPTIONS:
+  --execute    Actually perform the deduplication (default is dry-run)
+  --help       Show this help message
+
+EXAMPLES:
+  $0                    # Dry run - show what would be done
+  $0 --execute          # Actually perform deduplication
+
+EOF
+}
+
+#######################################
+# Parse command line arguments.
+# Arguments:
+#   All command line arguments
+#######################################
+parse_arguments() {
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+      --execute)
+        EXECUTE_MODE=true
+        shift
+        ;;
+      --help)
+        usage
+        exit 0
+        ;;
+      *)
+        echo "Error: Unknown option '$1'" >&2
+        usage >&2
+        exit 1
+        ;;
+    esac
+  done
+}
+
+#######################################
+# Calculate SHA256 checksum for a file.
+# Arguments:
+#   File path
+# Returns:
+#   Checksum via stdout
+#######################################
+calculate_checksum() {
+  local file="$1"
+  sha256sum "${file}" | cut -d' ' -f1
+}
+
+#######################################
+# Create temporary directory for processing.
+# Globals:
+#   TEMP_DIR
+# Arguments:
+#   None
+#######################################
+setup_temp_dir() {
+  TEMP_DIR="$(mktemp -d)"
+  trap 'rm -rf "${TEMP_DIR}"' EXIT
+}
+
+#######################################
+# Find all WebP files and calculate their checksums.
+# Globals:
+#   FILE_CHECKSUMS
+#   TEMP_DIR
+# Arguments:
+#   None
+#######################################
+scan_webp_files() {
+  local file
+  local checksum
+  local file_count=0
+  local checksum_file_list="${TEMP_DIR}/checksum_files.txt"
+
+  echo "Scanning for WebP files..."
+
+  # Create file with checksum and filepath pairs
+  > "${checksum_file_list}"
+
+  # Find all .webp files in content/weeks/
+  while IFS= read -r -d '' file; do
+    file_count=$((file_count + 1))
+    echo "  Processing file ${file_count}: ${file}"
+
+    checksum="$(calculate_checksum "${file}")"
+    FILE_CHECKSUMS["${file}"]="${checksum}"
+
+    # Write checksum and file path to temp file
+    echo "${checksum} ${file}" >> "${checksum_file_list}"
+  done < <(find content/weeks -name "*.webp" -type f -print0 | sort -z)
+
+  echo "Found ${file_count} WebP files to analyze"
+  echo ""
+}
+
+#######################################
+# Identify duplicate groups and determine originals.
+# Globals:
+#   DUPLICATE_GROUPS
+#   FILES_TO_DELETE
+#   TEMP_DIR
+# Arguments:
+#   None
+#######################################
+identify_duplicates() {
+  local checksum_file_list="${TEMP_DIR}/checksum_files.txt"
+  local duplicates_list="${TEMP_DIR}/duplicates.txt"
+  local group_count=0
+  local checksum
+  local file_list
+  local original
+  local duplicate
+
+  echo "Analyzing for duplicates..."
+
+  # Sort by checksum and find duplicates
+  sort "${checksum_file_list}" | uniq -w 64 -D > "${duplicates_list}"
+
+  if [[ ! -s "${duplicates_list}" ]]; then
+    echo "No duplicate WebP files found."
+    echo ""
+    return 0
+  fi
+
+  # Process each group of duplicates
+  while IFS= read -r checksum; do
+    group_count=$((group_count + 1))
+
+    # Get all files with this checksum and sort them (earliest first)
+    file_list=($(grep "^${checksum} " "${duplicates_list}" | cut -d' ' -f2- | sort))
+
+    original="${file_list[0]}"
+
+    echo "Group ${group_count}: (${#file_list[@]} files with checksum ${checksum:0:8}...)"
+    echo "  Original: ${original}"
+    echo "  Duplicates:"
+
+    # Add duplicates to deletion list
+    for duplicate in "${file_list[@]:1}"; do
+      echo "    - ${duplicate}"
+      FILES_TO_DELETE+=("${duplicate}")
+    done
+    echo ""
+
+    DUPLICATE_GROUPS+=("${checksum}")
+  done < <(cut -d' ' -f1 "${duplicates_list}" | sort -u)
+
+  echo "Found ${group_count} duplicate groups with ${#FILES_TO_DELETE[@]} files to remove"
+  echo ""
+}
+
+#######################################
+# Update markdown files to replace duplicate references with originals.
+# Globals:
+#   DUPLICATE_GROUPS
+#   MARKDOWN_FILES_TO_UPDATE
+#   EXECUTE_MODE
+#   TEMP_DIR
+# Arguments:
+#   None
+#######################################
+update_markdown_references() {
+  local checksum
+  local file_list
+  local original
+  local duplicate
+  local original_filename
+  local duplicate_filename
+  local markdown_file
+  local updated_files=0
+  local duplicates_list="${TEMP_DIR}/duplicates.txt"
+  local markdown_dir
+  local original_dir
+  local original_date
+  local replacement_path
+
+  if [[ ${#DUPLICATE_GROUPS[@]} -eq 0 ]]; then
+    return 0
+  fi
+
+  echo "Updating markdown references..."
+
+  # Find all markdown files
+  while IFS= read -r -d '' markdown_file; do
+    local file_modified=false
+    markdown_dir="$(dirname "${markdown_file}")"
+
+    for checksum in "${DUPLICATE_GROUPS[@]}"; do
+      # Get all files with this checksum and sort them (earliest first)
+      file_list=($(grep "^${checksum} " "${duplicates_list}" | cut -d' ' -f2- | sort))
+
+      original="${file_list[0]}"
+      original_filename="$(basename "${original}")"
+      original_dir="$(dirname "${original}")"
+
+      # Extract date from original path (e.g., "2020-03-20" from "content/weeks/2020-03-20")
+      original_date="$(basename "${original_dir}")"
+
+      # Check each duplicate
+      for duplicate in "${file_list[@]:1}"; do
+        duplicate_filename="$(basename "${duplicate}")"
+        duplicate_dir="$(dirname "${duplicate}")"
+
+        # Check if this markdown file contains references to the duplicate
+        if grep -q "${duplicate_filename}" "${markdown_file}" 2>/dev/null; then
+          # Skip if markdown is in original directory and duplicate is from different directory
+          # (this means the markdown already references the correct original file)
+          if [[ "${markdown_dir}" == "${original_dir}" && "${duplicate_dir}" != "${original_dir}" ]]; then
+            continue
+          fi
+
+          # Determine the replacement path
+          if [[ "${markdown_dir}" == "${original_dir}" ]]; then
+            # Same directory - use just the filename
+            replacement_path="${original_filename}"
+          else
+            # Different directory - use Hugo absolute path format
+            replacement_path="/${original_date}/${original_filename}"
+          fi
+
+          echo "  Updating ${markdown_file}: ${duplicate_filename} -> ${replacement_path}"
+
+          if [[ "${EXECUTE_MODE}" == true ]]; then
+            sed -i "s|${duplicate_filename}|${replacement_path}|g" "${markdown_file}"
+          fi
+
+          file_modified=true
+        fi
+      done
+    done
+
+    if [[ "${file_modified}" == true ]]; then
+      updated_files=$((updated_files + 1))
+      MARKDOWN_FILES_TO_UPDATE+=("${markdown_file}")
+    fi
+  done < <(find content/weeks -name "*.md" -type f -print0)
+
+  if [[ ${updated_files} -gt 0 ]]; then
+    if [[ "${EXECUTE_MODE}" == true ]]; then
+      echo "Updated ${updated_files} markdown files"
+    else
+      echo "[DRY RUN] Would update ${updated_files} markdown files"
+    fi
+  else
+    echo "No markdown files need updating"
+  fi
+  echo ""
+}
+
+#######################################
+# Delete duplicate files.
+# Globals:
+#   FILES_TO_DELETE
+#   EXECUTE_MODE
+# Arguments:
+#   None
+#######################################
+delete_duplicate_files() {
+  local file
+
+  if [[ ${#FILES_TO_DELETE[@]} -eq 0 ]]; then
+    return 0
+  fi
+
+  echo "Deleting duplicate files..."
+
+  for file in "${FILES_TO_DELETE[@]}"; do
+    echo "  Removing: ${file}"
+
+    if [[ "${EXECUTE_MODE}" == true ]]; then
+      rm -f "${file}"
+    fi
+  done
+
+  if [[ "${EXECUTE_MODE}" == true ]]; then
+    echo "Deleted ${#FILES_TO_DELETE[@]} duplicate files"
+  else
+    echo "[DRY RUN] Would delete ${#FILES_TO_DELETE[@]} duplicate files"
+  fi
+  echo ""
+}
+
+#######################################
+# Display final summary.
+# Globals:
+#   DUPLICATE_GROUPS
+#   MARKDOWN_FILES_TO_UPDATE
+#   FILES_TO_DELETE
+#   EXECUTE_MODE
+# Arguments:
+#   None
+#######################################
+display_summary() {
+  echo "Summary"
+  echo "======="
+
+  if [[ ${#DUPLICATE_GROUPS[@]} -eq 0 ]]; then
+    echo "🎉 No duplicate WebP files found!"
+    echo "All WebP files are unique."
+    return 0
+  fi
+
+  if [[ "${EXECUTE_MODE}" == true ]]; then
+    echo "✅ Deduplication completed successfully!"
+    echo "  - Found ${#DUPLICATE_GROUPS[@]} duplicate groups"
+    echo "  - Updated ${#MARKDOWN_FILES_TO_UPDATE[@]} markdown files"
+    echo "  - Deleted ${#FILES_TO_DELETE[@]} duplicate files"
+  else
+    echo "📋 Dry run completed - no changes made"
+    echo "  - Found ${#DUPLICATE_GROUPS[@]} duplicate groups"
+    echo "  - Would update ${#MARKDOWN_FILES_TO_UPDATE[@]} markdown files"
+    echo "  - Would delete ${#FILES_TO_DELETE[@]} duplicate files"
+    echo ""
+    echo "To execute these changes, run with --execute flag:"
+    echo "  $0 --execute"
+  fi
+}
+
+#######################################
+# Main function to orchestrate the deduplication process.
+# Arguments:
+#   All command line arguments
+#######################################
+main() {
+  echo "WebP Duplicate Finder"
+  echo "===================="
+  echo ""
+
+  parse_arguments "$@"
+
+  # Ensure content/weeks directory exists
+  if [[ ! -d "content/weeks" ]]; then
+    echo "Error: content/weeks directory not found." >&2
+    echo "Please run this script from the project root directory." >&2
+    exit 1
+  fi
+
+  setup_temp_dir
+  scan_webp_files
+  identify_duplicates
+  update_markdown_references
+  delete_duplicate_files
+  display_summary
+}
+
+main "$@"

@@ -1,0 +1,301 @@
+#!/usr/bin/env bash
+#
+# Import imgur images from markdown files in the content folder.
+# Downloads images, converts them to lossless WebP format (stripping EXIF),
+# stores them in the same folder as the markdown file, and updates the
+# markdown links to reference the local images.
+
+# Exit build script on first failure.
+set -e
+
+# Exit on unset variable.
+set -u
+
+# Configuration for download retries
+readonly MAX_RETRY_ATTEMPTS=5
+readonly INITIAL_WAIT_TIME=2
+
+# Initialize array to track failed downloads
+declare -a FAILED_URLS=()
+
+#######################################
+# Download files with retry logic and exponential backoff.
+# Globals:
+#   MAX_RETRY_ATTEMPTS
+#   INITIAL_WAIT_TIME
+# Arguments:
+#   URL to download
+#   Output file path
+# Returns:
+#   0 if download successful, 1 if all attempts failed
+#######################################
+download_with_retry() {
+  local url="$1"
+  local output_file="$2"
+  local wait_time="${INITIAL_WAIT_TIME}"
+  local attempt
+
+  for attempt in $(seq 1 "${MAX_RETRY_ATTEMPTS}"); do
+    # Add User-Agent and wait between requests to avoid rate limiting
+    if wget -q --user-agent="Mozilla/5.0 (compatible; imgur-downloader)" \
+            --wait=2 --random-wait "${url}" -O "${output_file}"; then
+      return 0  # Success
+    fi
+
+    if (( attempt < MAX_RETRY_ATTEMPTS )); then
+      echo "        Attempt ${attempt} failed, waiting ${wait_time}s before retry..."
+      sleep "${wait_time}"
+      (( wait_time *= 2 ))  # Exponential backoff
+    else
+      echo "        All ${MAX_RETRY_ATTEMPTS} attempts failed"
+    fi
+  done
+
+  return 1  # All attempts failed
+}
+
+#######################################
+# Convert image to lossless WebP format using ImageMagick.
+# Arguments:
+#   Input file path
+#   Output file path
+# Returns:
+#   0 if conversion successful, 1 if failed
+#######################################
+convert_to_webp() {
+  local input_file="$1"
+  local output_file="$2"
+
+  if magick "${input_file}" -define webp:lossless=true -strip "${output_file}"; then
+    echo "      ✓ Converted to WebP: ${output_file}"
+    # Remove the original downloaded file
+    rm -f "${input_file}"
+    return 0
+  else
+    echo "      ✗ Failed to convert ${input_file} to WebP"
+    return 1
+  fi
+}
+
+#######################################
+# Get the direct image URL from an imgur URL.
+# Arguments:
+#   Imgur URL (may be page URL or direct image URL)
+# Returns:
+#   Direct image URL via stdout
+#######################################
+get_direct_imgur_url() {
+  local url="$1"
+
+  # If it's already a direct image URL (has file extension), return as-is
+  if [[ "${url}" =~ \.(jpg|jpeg|png|gif|webp)$ ]]; then
+    echo "${url}"
+    return 0
+  fi
+
+  # If it's an imgur page URL, convert to direct image URL
+  # Extract the image ID from URLs like https://imgur.com/4a6bHRz
+  local image_id
+  if [[ "${url}" =~ imgur\.com/([a-zA-Z0-9]+)$ ]]; then
+    image_id="${BASH_REMATCH[1]}"
+    echo "https://i.imgur.com/${image_id}.png"
+  else
+    # Fallback: return original URL
+    echo "${url}"
+  fi
+}
+
+#######################################
+# Process a single imgur URL found in markdown file.
+# Globals:
+#   FAILED_URLS
+#   MAX_RETRY_ATTEMPTS
+# Arguments:
+#   URL to process
+#   Markdown file path
+# Returns:
+#   0 on success, 1 on failure
+#######################################
+process_imgur_url() {
+  local url="$1"
+  local file="$2"
+  local direct_url
+  local image_id
+  local file_dir
+  local temp_file
+  local target_file
+
+  # Skip imgur album URLs (imgur.com/a/)
+  if [[ "${url}" =~ imgur\.com/a/ ]]; then
+    echo "    - ${url} -> SKIPPED (album URL)"
+    return 0
+  fi
+
+  # Get direct image URL
+  direct_url="$(get_direct_imgur_url "${url}")"
+
+  # Extract image ID for filename
+  if [[ "${url}" =~ imgur\.com/([a-zA-Z0-9]+) ]]; then
+    image_id="${BASH_REMATCH[1]}"
+  else
+    echo "      ✗ Could not extract image ID from ${url}"
+    FAILED_URLS+=("${url}")
+    return 1
+  fi
+
+  echo "    - ${url} -> ${image_id}.webp"
+
+  # Download the image to a temporary file, then move to target directory
+  file_dir="$(dirname "${file}")"
+  temp_file="$(mktemp)"
+  target_file="${file_dir}/${image_id}.webp"
+
+  # Check if WebP file already exists
+  if [[ -f "${target_file}" ]]; then
+    echo "      ✓ File ${image_id}.webp already exists, skipping download"
+    # Still update the reference in markdown
+    sed -i "s|${url}|${image_id}.webp|g" "${file}"
+    echo "      ✓ Updated reference in markdown"
+    return 0
+  fi
+
+  # Download the image
+  if download_with_retry "${direct_url}" "${temp_file}"; then
+    echo "      ✓ Downloaded ${image_id}"
+
+    # Convert to WebP
+    if convert_to_webp "${temp_file}" "${target_file}"; then
+      # Replace the URL with just the filename in the markdown
+      sed -i "s|${url}|${image_id}.webp|g" "${file}"
+      echo "      ✓ Updated reference in markdown"
+      return 0
+    else
+      # Clean up temp file if conversion failed
+      rm -f "${temp_file}"
+      FAILED_URLS+=("${url}")
+      return 1
+    fi
+  else
+    echo "      ✗ Failed to download ${image_id} from ${direct_url} after ${MAX_RETRY_ATTEMPTS} attempts"
+    # Clean up temp file if download failed
+    rm -f "${temp_file}"
+    FAILED_URLS+=("${url}")
+    return 1
+  fi
+}
+
+#######################################
+# Process all markdown files to find and download imgur images.
+# Globals:
+#   FAILED_URLS
+# Arguments:
+#   Target directory (defaults to "content")
+#######################################
+process_markdown_files() {
+  local target_dir="${1:-content}"
+  local file
+  local temp_urls
+  local temp_content
+  local url
+  local total_files=0
+  local processed_files=0
+
+  echo "Scanning for imgur links in markdown files..."
+
+  # Create array of markdown files
+  local markdown_files=()
+  while IFS= read -r -d '' file; do
+    markdown_files+=("$file")
+  done < <(find "${target_dir}" -name "*.md" -type f -print0)
+
+  total_files=${#markdown_files[@]}
+  echo "Found ${total_files} markdown files to process"
+  echo ""
+
+  # Process each markdown file
+  for file in "${markdown_files[@]}"; do
+    processed_files=$((processed_files + 1))
+    echo "Processing (${processed_files}/${total_files}): ${file}"
+
+    # Create temporary files for URL extraction
+    temp_urls="$(mktemp)"
+    temp_content="$(mktemp)"
+
+    # Create a copy of the file content with backticked content temporarily
+    # removed. This prevents URLs within backticks from being extracted
+    sed 's/`[^`]*`//g' "${file}" > "${temp_content}"
+
+    # Extract imgur URLs (both page URLs and direct image URLs)
+    grep -oE 'https?://[^/]*imgur\.com/[^)[:space:]]+' \
+      "${temp_content}" > "${temp_urls}" 2>/dev/null || true
+
+    if [[ -s "${temp_urls}" ]]; then
+      echo "  Found imgur URLs to process:"
+
+      while read -r url; do
+        process_imgur_url "${url}" "${file}"
+      done < "${temp_urls}"
+    else
+      echo "  No imgur URLs found"
+    fi
+
+    # Clean up temporary files
+    rm -f "${temp_urls}" "${temp_content}"
+    echo ""
+  done
+}
+
+
+#######################################
+# Display final import results and any failed downloads.
+# Globals:
+#   FAILED_URLS
+# Arguments:
+#   None
+#######################################
+display_results() {
+  echo ""
+
+  # Report failed downloads
+  if (( ${#FAILED_URLS[@]} == 0 )); then
+    echo "🎉 Import completed successfully!"
+    echo "All imgur images were downloaded and converted to WebP."
+  else
+    echo "⚠️  Import completed with some failed downloads:"
+    echo "The following URLs failed to download:"
+    local url
+    for url in "${FAILED_URLS[@]}"; do
+      echo "  - ${url}"
+    done
+    echo ""
+    echo "Total failed downloads: ${#FAILED_URLS[@]}"
+  fi
+
+  echo ""
+  echo "All processed images are now stored locally as WebP files."
+  echo "Markdown files have been updated to reference the local images."
+}
+
+#######################################
+# Main function to orchestrate the import process.
+# Arguments:
+#   Optional target directory (defaults to "content")
+#######################################
+main() {
+  local target_dir="${1:-content}"
+
+  echo "Imgur Image Import Tool"
+  echo "======================"
+  echo ""
+
+  # Ensure target directory exists
+  if [[ ! -d "${target_dir}" ]]; then
+    echo "Error: target directory '${target_dir}' not found." >&2
+    exit 1
+  fi
+
+  process_markdown_files "${target_dir}"
+  display_results
+}
+
+main "$@"
