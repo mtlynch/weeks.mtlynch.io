@@ -1,45 +1,52 @@
 <nav class="week-navigation">
-  {{ $firstPage := index .CurrentSection.Pages.ByDate 0 }} {{ $lastPage := index
-  .CurrentSection.Pages.ByDate.Reverse 0 }} {{ if ne .RelPermalink
-  $firstPage.RelPermalink }}
-  <a
-    href="{{ $firstPage.RelPermalink }}"
-    class="nav-link nav-first"
-    title="First week"
-  >
-    ⟵ First
-  </a>
+  {{ $firstPage := index .CurrentSection.Pages.ByDate 0 }}
+  {{ $lastPage := index
+    .CurrentSection.Pages.ByDate.Reverse 0
+  }}
+  {{ if ne .RelPermalink
+    $firstPage.RelPermalink
+  }}
+    <a
+      href="{{ $firstPage.RelPermalink }}"
+      class="nav-link nav-first"
+      title="First week"
+    >
+      ⟵ First
+    </a>
   {{ else }}
-  <span class="nav-link nav-disabled"></span>
-  {{ end }} {{ if .PrevInSection }}
-  <a
-    href="{{ .PrevInSection.RelPermalink }}"
-    class="nav-link nav-prev"
-    title="Previous week"
-  >
-    ← Previous
-  </a>
+    <span class="nav-link nav-disabled"></span>
+  {{ end }}
+  {{ if .PrevInSection }}
+    <a
+      href="{{ .PrevInSection.RelPermalink }}"
+      class="nav-link nav-prev"
+      title="Previous week"
+    >
+      ← Previous
+    </a>
   {{ else }}
-  <span class="nav-link nav-disabled"></span>
-  {{ end }} {{ if .NextInSection }}
-  <a
-    href="{{ .NextInSection.RelPermalink }}"
-    class="nav-link nav-next"
-    title="Next week"
-  >
-    Next →
-  </a>
+    <span class="nav-link nav-disabled"></span>
+  {{ end }}
+  {{ if .NextInSection }}
+    <a
+      href="{{ .NextInSection.RelPermalink }}"
+      class="nav-link nav-next"
+      title="Next week"
+    >
+      Next →
+    </a>
   {{ else }}
-  <span class="nav-link nav-disabled"></span>
-  {{ end }} {{ if ne .RelPermalink $lastPage.RelPermalink }}
-  <a
-    href="{{ $lastPage.RelPermalink }}"
-    class="nav-link nav-last"
-    title="Last week"
-  >
-    Latest ⟶
-  </a>
+    <span class="nav-link nav-disabled"></span>
+  {{ end }}
+  {{ if ne .RelPermalink $lastPage.RelPermalink }}
+    <a
+      href="{{ $lastPage.RelPermalink }}"
+      class="nav-link nav-last"
+      title="Last week"
+    >
+      Latest ⟶
+    </a>
   {{ else }}
-  <span class="nav-link nav-disabled"></span>
+    <span class="nav-link nav-disabled"></span>
   {{ end }}
 </nav>

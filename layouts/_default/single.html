@@ -1,11 +1,15 @@
 {{ define "page" }}
-<article class="container">
-  <a href="{{ .Site.Home.RelPermalink }}">Home</a>
-  <h1 style="text-align: center">
-    Update for the week ending on {{ .Date.Format "Monday, Jan 2, 2006" }}
-  </h1>
+  <article class="container">
+    <a href="{{ .Site.Home.RelPermalink }}">Home</a>
+    <h1 style="text-align: center">
+      Update for the week ending on
+      {{ .Date.Format "Monday, Jan 2, 2006" }}
+    </h1>
 
-  {{ partial "week-navigation.html" . }} {{ .Content }} {{ partial
-  "week-navigation.html" . }}
-</article>
+    {{ partial "week-navigation.html" . }}
+    {{ .Content }}
+    {{ partial
+      "week-navigation.html" .
+    }}
+  </article>
 {{ end }}
