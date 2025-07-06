@@ -91,10 +91,66 @@ fetch_github_prs() {
     fi
 }
 
+# Function to query Codeberg for PRs
+fetch_codeberg_prs() {
+    if [ -z "${CODEBERG_TOKEN:-}" ]; then
+        echo "Warning: CODEBERG_TOKEN not set, skipping Codeberg activity" >&2
+        return 0
+    fi
+
+    # Get username from Codeberg token
+    echo "Fetching Codeberg username from token..." >&2
+    local username=$(curl -s -H "Authorization: token $CODEBERG_TOKEN" \
+        "https://codeberg.org/api/v1/user" | jq -r '.login // empty')
+
+    if [ -z "$username" ]; then
+        echo "Warning: Could not fetch Codeberg username from token, skipping Codeberg activity" >&2
+        return 0
+    fi
+
+    echo "Codeberg username: $username" >&2
+    local since_date="$PREVIOUS_FRIDAY"
+
+    # Query for authored PRs (using Forgejo/Gitea API)
+    # Note: Forgejo/Gitea doesn't have global search like GitHub, so we'll use a simpler approach
+    # Get user's repositories and then check for recent PRs in each
+    local repos=$(curl -s -H "Authorization: token $CODEBERG_TOKEN" \
+        "https://codeberg.org/api/v1/user/repos?limit=50" | jq -r '.[].full_name')
+
+    local authored_prs=""
+    for repo in $repos; do
+        if [ -n "$repo" ]; then
+            local repo_prs=$(curl -s -H "Authorization: token $CODEBERG_TOKEN" \
+                "https://codeberg.org/api/v1/repos/${repo}/pulls?state=all&sort=updated&direction=desc&limit=10" \
+                | jq -r --arg username "$username" --arg since_date "$since_date" \
+                '.[]? | select(.user.login == $username and .updated_at >= $since_date) | "- [\(.title)](\(.html_url))"')
+            if [ -n "$repo_prs" ]; then
+                authored_prs="${authored_prs}${repo_prs}"$'\n'
+            fi
+        fi
+    done
+
+    # Query for commented PRs - Forgejo doesn't support commenter search, so we'll skip this
+    # Query for reviewed PRs - Forgejo doesn't support reviewed-by search, so we'll skip this
+
+    # For now, just use authored PRs
+    local all_prs="$authored_prs"
+
+    if [ -n "$all_prs" ]; then
+        echo ""
+        echo "## Codeberg Activity"
+        echo ""
+        echo "$all_prs"
+    fi
+}
+
 hugo new "${WEEK_PATH}" \
   --clock "${EST_PUBLISH_DATE}"
 
 # Append GitHub activity to the generated file
 fetch_github_prs >> "${WEEK_PATH}"
+
+# Append Codeberg activity to the generated file
+fetch_codeberg_prs >> "${WEEK_PATH}"
 
 code "${WEEK_PATH}"
