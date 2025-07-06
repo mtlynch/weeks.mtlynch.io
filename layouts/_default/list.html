@@ -34,7 +34,7 @@
     {{ end }}
     {{ $weeksSection := .Site.GetPage "section" "weeks" }}
     {{ if $weeksSection }}
-      <ol>
+      <ol reversed>
         {{ range $weeksSection.Pages }}
           <li>
             <a href="{{ .RelPermalink }}">
