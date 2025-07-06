@@ -27,6 +27,7 @@
       htmltest = htmltest-nixpkgs.legacyPackages.${system}.htmltest;
       libxml2 = hugo-nixpkgs.legacyPackages.${system}.libxml2;
       imagemagick = hugo-nixpkgs.legacyPackages.${system}.imagemagick;
+      jq = hugo-nixpkgs.legacyPackages.${system}.jq;
       wget = hugo-nixpkgs.legacyPackages.${system}.wget;
     in {
       devShells.default = hugo-nixpkgs.legacyPackages.${system}.mkShell {
@@ -36,11 +37,13 @@
           libxml2
           nodejs
           imagemagick
+          jq
           wget
         ];
 
         shellHook = ''
           magick --version | head -n 1 | sed 's/Version: //' | awk '{print $1, $2, $3, $4, $5}'
+          jq --version
           htmltest --version
           echo "node" "$(node --version)"
           hugo version
