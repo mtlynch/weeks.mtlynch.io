@@ -9,6 +9,8 @@ set -x
 # Exit on unset variable.
 set -u
 
+. .env.prod
+
 # Get current day of week (1=Monday, 5=Friday)
 DAY_OF_WEEK=$(date +%u)
 
@@ -29,9 +31,70 @@ readonly FRIDAY_DATE
 EST_PUBLISH_DATE=$(date -d "+${DAYS_UNTIL_FRIDAY} days" +%Y-%m-%dT00:00:00%:z)
 readonly EST_PUBLISH_DATE
 
+# Calculate previous Friday for GitHub query
+if [ "$DAY_OF_WEEK" -eq 5 ]; then
+    # It's Friday, get last Friday (7 days ago)
+    DAYS_SINCE_LAST_FRIDAY=7
+else
+    # Calculate days since last Friday
+    DAYS_SINCE_LAST_FRIDAY=$((DAY_OF_WEEK + 2))
+fi
+
+PREVIOUS_FRIDAY=$(date -d "-${DAYS_SINCE_LAST_FRIDAY} days" +%Y-%m-%d)
+readonly PREVIOUS_FRIDAY
+
 readonly WEEK_PATH="content/weeks/${FRIDAY_DATE}/index.md"
+
+# Function to query GitHub for PRs
+fetch_github_prs() {
+    if [ -z "${GITHUB_TOKEN:-}" ]; then
+        echo "Warning: GITHUB_TOKEN not set, skipping GitHub activity" >&2
+        return 0
+    fi
+
+    # Get username from GitHub token
+    echo "Fetching GitHub username from token..." >&2
+    local username=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+        "https://api.github.com/user" | jq -r '.login // empty')
+
+    if [ -z "$username" ]; then
+        echo "Warning: Could not fetch GitHub username from token, skipping GitHub activity" >&2
+        return 0
+    fi
+
+    echo "GitHub username: $username" >&2
+    local since_date="$PREVIOUS_FRIDAY"
+
+    # Query for authored PRs
+    local authored_prs=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+        "https://api.github.com/search/issues?q=type:pr+author:${username}+updated:>=${since_date}&sort=updated&order=desc" \
+        | jq -r '.items[]? | "- [\(.title)](\(.html_url))"')
+
+    # Query for commented PRs
+    local commented_prs=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+        "https://api.github.com/search/issues?q=type:pr+commenter:${username}+updated:>=${since_date}&sort=updated&order=desc" \
+        | jq -r '.items[]? | "- [\(.title)](\(.html_url))"')
+
+    # Query for reviewed PRs
+    local reviewed_prs=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+        "https://api.github.com/search/issues?q=type:pr+reviewed-by:${username}+updated:>=${since_date}&sort=updated&order=desc" \
+        | jq -r '.items[]? | "- [\(.title)](\(.html_url))"')
+
+    # Combine and deduplicate results
+    local all_prs=$(echo -e "$authored_prs\n$commented_prs\n$reviewed_prs" | grep -v '^$' | sort -u)
+
+    if [ -n "$all_prs" ]; then
+        echo ""
+        echo "## GitHub Activity"
+        echo ""
+        echo "$all_prs"
+    fi
+}
 
 hugo new "${WEEK_PATH}" \
   --clock "${EST_PUBLISH_DATE}"
+
+# Append GitHub activity to the generated file
+fetch_github_prs >> "${WEEK_PATH}"
 
 code "${WEEK_PATH}"
