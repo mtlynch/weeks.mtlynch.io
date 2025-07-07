@@ -8,8 +8,8 @@ lastmod: 2019-06-04
 - Adjusted design of food pages
   - Major change was to replace the keto meter with a new one @LoLo_ology designed
   - Before/after screenshots
-    - ![Propel Fitness Water](u55DIdT.webp)
-    - ![Peanut Butter Americano Peanut Butter](OmKY46o.webp)
+    - [Propel Fitness Water](u55DIdT.webp)
+    - [Peanut Butter Americano Peanut Butter](OmKY46o.webp)
 - 4 new Twitter followers (443 total)
   - Slowdown now that I wound down my social media manager
 - Replaced "Recent Foods" with "Popular Foods"
