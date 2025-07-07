@@ -21,7 +21,7 @@ lastmod: 2019-06-04
   - Side effect: created a [Privacy Policy](https://isitketo.org/meta/privacy-policy)
 - Added snippet for Amazon OneLink
 - Got rid of Twitter specific meta tags when they had a fallback to opengraph properties.
-- Tried to figure out why babel kept throwing errors on Circle CI but nowhere else.
+- Tried to figure out why babel kept throwing errors on CircleCI but nowhere else.
 - Found more links that were missing between pages.
 
 ## What Got Done App
