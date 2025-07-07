@@ -30,7 +30,7 @@ lastmod: 2019-05-02
 
 ## [KetoHub](https://ketohub.io)
 
-- Migrated scraper code from Travis to Circle CI
+- Migrated scraper code from Travis to CircleCI
 - Improved accuracy for scraping ruled.me ingredients
 
 ## [Dusty VCR](https://dustyvcr.com)

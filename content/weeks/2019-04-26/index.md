@@ -7,7 +7,7 @@ lastmod: 2019-05-02
 
 - Continued working on Hello World Cypress post
 - Reached out to Cypress team for review of an early draft
-- Fixed a regression I introduced when I migrated from Travis to Circle CI
+- Fixed a regression I introduced when I migrated from Travis to CircleCI
   - I forgot to include the step of compiling the JS file for the site
   - [Fix part 1](https://github.com/mtlynch/mtlynch.io/pull/399)
   - [Fix part 2](https://github.com/mtlynch/mtlynch.io/pull/400)
