@@ -5,10 +5,10 @@ lastmod: 2019-06-04
 
 ## [Is It Keto](https://isitketo.org)
 
-- Migrated to Circle
+- Migrated to CircleCI
 - Migrated from Selenium to Cypress
 - Fixed generation of structured data
-- Migrated admin interface to Circle
+- Migrated admin interface to CircleCI
 - Wrote a script to find missing crosslinks
 - Wrote a script to download the datastore locally
 - Commissioned cartoonist to create new keto meter graphics

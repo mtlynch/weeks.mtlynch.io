@@ -45,7 +45,7 @@ I discovered there's an [official emulator](https://cloud.google.com/sdk/gcloud/
 ## [What Got Done](https://whatgotdone.com)
 
 - Deleted the Redis datastore implementation I was so proud of a few weeks ago in favor of the simpler Firestore Emulator ([#369](https://github.com/mtlynch/whatgotdone/pull/369))
-- Switched to an explicit machine image in Circle CI ([#368](https://github.com/mtlynch/whatgotdone/pull/368))
+- Switched to an explicit machine image in CircleCI ([#368](https://github.com/mtlynch/whatgotdone/pull/368))
   - I didn't want What Got Done to get the same e2e false positives I suffered with Is It Keto (see above)
 
 ## [Zestful](https://zestfuldata.com)

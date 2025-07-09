@@ -68,7 +68,7 @@ Last year, I digitized about 40 hours of my family’s old home videos and put t
 ## Misc
 
 - Balanced my books for September
-- Upgraded my AppEngine Python Docker image to [gcloud v265](https://github.com/mtlynch/docker-app-engine-python/pull/7) and added a [Circle CI build](https://github.com/mtlynch/docker-app-engine-python/pull/8)
+- Upgraded my AppEngine Python Docker image to [gcloud v265](https://github.com/mtlynch/docker-app-engine-python/pull/7) and added a [CircleCI build](https://github.com/mtlynch/docker-app-engine-python/pull/8)
 - [Made a PR](https://github.com/cypress-io/cypress-docker-images/pull/152) to add Docker badges to the Cypress Docker images READMEs
 - Got my annual auto inspection
   - My sticker expired "9/2020" so I got the inspection on 9/30, which renewed my car until 2020-09-30.

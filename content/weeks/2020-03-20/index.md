@@ -7,19 +7,19 @@ date: 2020-03-20
 The portfolio rebalancer is a new project I started this week to [rebalance portfolios](https://www.bogleheads.org/wiki/Rebalancing) so that the investor can maintain a particular ratio of assets. For example, you could say, "I want to 30% of my money in US stocks, 20% in international stocks, and 50% in bonds. Here's my current portfolio." And the rebalancer will tell you what assets to exchange so that you're at the balance you want.
 
 - Here's a visual diary of my progress.
-  - ![Day 1](gErbDc9.webp)
+  - [Day 1](gErbDc9.webp)
     - Basic functionality works!
     - It can rebalance a portfolio with up to TWO holdings.
     - Spent lots of time figuring out how to wrap bootstrap-vue components so that they have the same functionality but work on arbitrary-precision numbers instead of JS-native number types (which are too imprecise for financial calculations).
-  - ![Day 2](q9gXfnU.webp)
+  - [Day 2](q9gXfnU.webp)
     - Put everything into nicer UI components like tables and cards to make everything feel more organized.
     - Started moving business logic out of the Vue components and into TypeScript controllers, where it's easier to write unit tests for them.
-  - ![Day 3](XleXsm2.webp)
+  - [Day 3](XleXsm2.webp)
     - Implemented support for portfolios with up to 3 holdings.
     - Created a Firebase project to host it ([https://rebalancer.mtlynch.io](https://rebalancer.mtlynch.io) for now)
     - Added a CircleCI config for automatic deployment and testing
     - Spent hours trying to figure out how to use TypeScript enums as dictionary indices before finally giving up and converting the enums to const instances of a class.
-  - ![Day 4](mz8QdYu.webp)
+  - [Day 4](mz8QdYu.webp)
     - Added a bootstrap theme
     - Added a navbar
     - Wrote an About page

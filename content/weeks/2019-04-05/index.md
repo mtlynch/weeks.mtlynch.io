@@ -8,8 +8,8 @@ lastmod: 2019-06-04
 - Adjusted design of food pages
   - Major change was to replace the keto meter with a new one @LoLo_ology designed
   - Before/after screenshots
-    - ![Propel Fitness Water](u55DIdT.webp)
-    - ![Peanut Butter Americano Peanut Butter](OmKY46o.webp)
+    - [Propel Fitness Water](u55DIdT.webp)
+    - [Peanut Butter Americano Peanut Butter](OmKY46o.webp)
 - 4 new Twitter followers (443 total)
   - Slowdown now that I wound down my social media manager
 - Replaced "Recent Foods" with "Popular Foods"
@@ -21,7 +21,7 @@ lastmod: 2019-06-04
   - Side effect: created a [Privacy Policy](https://isitketo.org/meta/privacy-policy)
 - Added snippet for Amazon OneLink
 - Got rid of Twitter specific meta tags when they had a fallback to opengraph properties.
-- Tried to figure out why babel kept throwing errors on Circle CI but nowhere else.
+- Tried to figure out why babel kept throwing errors on CircleCI but nowhere else.
 - Found more links that were missing between pages.
 
 ## What Got Done App
