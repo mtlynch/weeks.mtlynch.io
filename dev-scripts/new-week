@@ -3,9 +3,6 @@
 # Exit build script on first failure.
 set -e
 
-# Echo commands to stdout.
-set -x
-
 # Exit on unset variable.
 set -u
 
@@ -111,30 +108,49 @@ fetch_codeberg_prs() {
     echo "Codeberg username: $username" >&2
     local since_date="$PREVIOUS_FRIDAY"
 
-    # Query for authored PRs (using Forgejo/Gitea API)
-    # Note: Forgejo/Gitea doesn't have global search like GitHub, so we'll use a simpler approach
-    # Get user's repositories and then check for recent PRs in each
-    local repos=$(curl -s -H "Authorization: token $CODEBERG_TOKEN" \
-        "https://codeberg.org/api/v1/user/repos?limit=50" | jq -r '.[].full_name')
+    # Convert since_date to ISO format for comparison
+    local since_timestamp=$(date -d "$since_date" +%s)
 
-    local authored_prs=""
-    for repo in $repos; do
-        if [ -n "$repo" ]; then
+    # Get user activities to identify repositories with recent activity
+    echo "Fetching recent Codeberg activities..." >&2
+    local activities=$(curl -s -H "Authorization: token $CODEBERG_TOKEN" \
+        "https://codeberg.org/api/v1/users/${username}/activities/feeds?limit=100")
+
+    # Extract unique repository names from recent activities
+    local active_repos=$(echo "$activities" | jq -r --arg since_date "$since_date" \
+        '.[]? | select(.created[:10] >= $since_date) | .repo.full_name' \
+        2>/dev/null | sort -u)
+
+
+    local all_prs=""
+    local repo_count=0
+
+    # Check PRs only for repositories with recent activity
+    for repo in $active_repos; do
+        if [ -n "$repo" ] && [ "$repo" != "null" ]; then
+            repo_count=$((repo_count + 1))
+            echo "Checking repository: $repo" >&2
+
+            # Get recent PRs from this repository
             local repo_prs=$(curl -s -H "Authorization: token $CODEBERG_TOKEN" \
                 "https://codeberg.org/api/v1/repos/${repo}/pulls?state=all&sort=updated&direction=desc&limit=10" \
                 | jq -r --arg username "$username" --arg since_date "$since_date" \
-                '.[]? | select(.user.login == $username and .updated_at >= $since_date) | "- [\(.title)](\(.html_url))"')
-            if [ -n "$repo_prs" ]; then
-                authored_prs="${authored_prs}${repo_prs}"$'\n'
+                '.[]? | select((.updated_at >= $since_date) and
+                              ((.user.login == $username) or
+                               (.assignees[]?.login == $username) or
+                               (.requested_reviewers[]?.login == $username))) |
+                "- [\(.title)](\(.html_url))"' 2>/dev/null)
+
+            if [ -n "$repo_prs" ] && [ "$repo_prs" != "null" ]; then
+                all_prs="${all_prs}${repo_prs}"$'\n'
             fi
         fi
     done
 
-    # Query for commented PRs - Forgejo doesn't support commenter search, so we'll skip this
-    # Query for reviewed PRs - Forgejo doesn't support reviewed-by search, so we'll skip this
+    echo "Checked $repo_count repositories for Codeberg activity" >&2
 
-    # For now, just use authored PRs
-    local all_prs="$authored_prs"
+    # Clean up the output and remove empty lines
+    all_prs=$(echo "$all_prs" | grep -v '^$' | sort -u)
 
     if [ -n "$all_prs" ]; then
         echo ""
