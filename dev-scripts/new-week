@@ -3,9 +3,6 @@
 # Exit build script on first failure.
 set -e
 
-# Echo commands to stdout.
-set -x
-
 # Exit on unset variable.
 set -u
 
@@ -91,10 +88,85 @@ fetch_github_prs() {
     fi
 }
 
+# Function to query Codeberg for PRs
+fetch_codeberg_prs() {
+    if [ -z "${CODEBERG_TOKEN:-}" ]; then
+        echo "Warning: CODEBERG_TOKEN not set, skipping Codeberg activity" >&2
+        return 0
+    fi
+
+    # Get username from Codeberg token
+    echo "Fetching Codeberg username from token..." >&2
+    local username=$(curl -s -H "Authorization: token $CODEBERG_TOKEN" \
+        "https://codeberg.org/api/v1/user" | jq -r '.login // empty')
+
+    if [ -z "$username" ]; then
+        echo "Warning: Could not fetch Codeberg username from token, skipping Codeberg activity" >&2
+        return 0
+    fi
+
+    echo "Codeberg username: $username" >&2
+    local since_date="$PREVIOUS_FRIDAY"
+
+    # Convert since_date to ISO format for comparison
+    local since_timestamp=$(date -d "$since_date" +%s)
+
+    # Get user activities to identify repositories with recent activity
+    echo "Fetching recent Codeberg activities..." >&2
+    local activities=$(curl -s -H "Authorization: token $CODEBERG_TOKEN" \
+        "https://codeberg.org/api/v1/users/${username}/activities/feeds?limit=100")
+
+    # Extract unique repository names from recent activities
+    local active_repos=$(echo "$activities" | jq -r --arg since_date "$since_date" \
+        '.[]? | select(.created[:10] >= $since_date) | .repo.full_name' \
+        2>/dev/null | sort -u)
+
+
+    local all_prs=""
+    local repo_count=0
+
+    # Check PRs only for repositories with recent activity
+    for repo in $active_repos; do
+        if [ -n "$repo" ] && [ "$repo" != "null" ]; then
+            repo_count=$((repo_count + 1))
+            echo "Checking repository: $repo" >&2
+
+            # Get recent PRs from this repository
+            local repo_prs=$(curl -s -H "Authorization: token $CODEBERG_TOKEN" \
+                "https://codeberg.org/api/v1/repos/${repo}/pulls?state=all&sort=updated&direction=desc&limit=10" \
+                | jq -r --arg username "$username" --arg since_date "$since_date" \
+                '.[]? | select((.updated_at >= $since_date) and
+                              ((.user.login == $username) or
+                               (.assignees[]?.login == $username) or
+                               (.requested_reviewers[]?.login == $username))) |
+                "- [\(.title)](\(.html_url))"' 2>/dev/null)
+
+            if [ -n "$repo_prs" ] && [ "$repo_prs" != "null" ]; then
+                all_prs="${all_prs}${repo_prs}"$'\n'
+            fi
+        fi
+    done
+
+    echo "Checked $repo_count repositories for Codeberg activity" >&2
+
+    # Clean up the output and remove empty lines
+    all_prs=$(echo "$all_prs" | grep -v '^$' | sort -u)
+
+    if [ -n "$all_prs" ]; then
+        echo ""
+        echo "## Codeberg Activity"
+        echo ""
+        echo "$all_prs"
+    fi
+}
+
 hugo new "${WEEK_PATH}" \
   --clock "${EST_PUBLISH_DATE}"
 
 # Append GitHub activity to the generated file
 fetch_github_prs >> "${WEEK_PATH}"
+
+# Append Codeberg activity to the generated file
+fetch_codeberg_prs >> "${WEEK_PATH}"
 
 code "${WEEK_PATH}"
