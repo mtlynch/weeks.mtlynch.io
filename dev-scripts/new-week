@@ -65,26 +65,38 @@ fetch_github_prs() {
     # Query for authored PRs
     local authored_prs=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
         "https://api.github.com/search/issues?q=type:pr+author:${username}+updated:>=${since_date}&sort=updated&order=desc" \
-        | jq -r '.items[]? | "- [\(.title)](\(.html_url))"')
+        | jq -r '.items[]? | "\(.repository_url)\t- [\(.title)](\(.html_url))"')
 
     # Query for commented PRs
     local commented_prs=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
         "https://api.github.com/search/issues?q=type:pr+commenter:${username}+updated:>=${since_date}&sort=updated&order=desc" \
-        | jq -r '.items[]? | "- [\(.title)](\(.html_url))"')
+        | jq -r '.items[]? | "\(.repository_url)\t- [\(.title)](\(.html_url))"')
 
     # Query for reviewed PRs
     local reviewed_prs=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
         "https://api.github.com/search/issues?q=type:pr+reviewed-by:${username}+updated:>=${since_date}&sort=updated&order=desc" \
-        | jq -r '.items[]? | "- [\(.title)](\(.html_url))"')
+        | jq -r '.items[]? | "\(.repository_url)\t- [\(.title)](\(.html_url))"')
 
-    # Combine and deduplicate results
-    local all_prs=$(echo -e "$authored_prs\n$commented_prs\n$reviewed_prs" | grep -v '^$' | sort -u)
+    # Combine, deduplicate, and group results
+    local all_prs=$(echo -e "$authored_prs\n$commented_prs\n$reviewed_prs" | grep -v '^[[:space:]]*$' | sort -u)
 
     if [ -n "$all_prs" ]; then
         echo ""
         echo "## GitHub Activity"
         echo ""
-        echo "$all_prs"
+
+        declare -A grouped_prs
+        while IFS=$'\t' read -r repo_url pr_line; do
+            repo_name=$(echo "$repo_url" | sed 's|https://api.github.com/repos/||')
+            grouped_prs["$repo_name"]+="$pr_line"$'\n'
+        done <<< "$all_prs"
+
+        # Sort repositories by name and print PRs
+        for repo_name in $(echo "${!grouped_prs[@]}" | tr ' ' '\n' | sort); do
+            echo "### [$repo_name](https://github.com/$repo_name)"
+            echo "${grouped_prs[$repo_name]}"
+            echo ""
+        done
     fi
 }
 
@@ -139,7 +151,7 @@ fetch_codeberg_prs() {
                               ((.user.login == $username) or
                                (.assignees[]?.login == $username) or
                                (.requested_reviewers[]?.login == $username))) |
-                "- [\(.title)](\(.html_url))"' 2>/dev/null)
+                "\(.head.repo.full_name)\t- [\(.title)](\(.html_url))"' 2>/dev/null)
 
             if [ -n "$repo_prs" ] && [ "$repo_prs" != "null" ]; then
                 all_prs="${all_prs}${repo_prs}"$'\n'
@@ -149,14 +161,23 @@ fetch_codeberg_prs() {
 
     echo "Checked $repo_count repositories for Codeberg activity" >&2
 
-    # Clean up the output and remove empty lines
-    all_prs=$(echo "$all_prs" | grep -v '^$' | sort -u)
-
+    # Clean up, group, and print the output
     if [ -n "$all_prs" ]; then
         echo ""
         echo "## Codeberg Activity"
         echo ""
-        echo "$all_prs"
+
+        declare -A grouped_prs
+        while IFS=$'\t' read -r repo_name pr_line; do
+            grouped_prs["$repo_name"]+="$pr_line"$'\n'
+        done <<< "$(echo "$all_prs" | grep -v '^[[:space:]]*$' | sort -u)"
+
+        # Sort repositories by name and print PRs
+        for repo_name in $(echo "${!grouped_prs[@]}" | tr ' ' '\n' | sort); do
+            echo "### [$repo_name](https://codeberg.org/$repo_name)"
+            echo "${grouped_prs[$repo_name]}"
+            echo ""
+        done
     fi
 }
 
