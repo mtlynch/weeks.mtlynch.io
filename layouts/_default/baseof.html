@@ -9,6 +9,22 @@
         {{ .CurrentSection.Title }}
       {{ end }}
     </title>
+
+    <meta property="og:url" content="{{ .Permalink }}" />
+    <meta property="og:site_name" content="{{ .Site.Title }}" />
+    {{ if eq .Section "weeks" }}
+      <meta
+        property="og:title"
+        content="Michael's update for {{ .Date.Format "Monday, January 2, 2006" }}"
+      />
+      <meta
+        property="og:description"
+        content="What Michael got done this week"
+      />
+      <meta property="og:type" content="article" />
+    {{ end }}
+
+
     <link rel="stylesheet" href="/css/style.css" />
 
     {{ if hugo.IsProduction }}
