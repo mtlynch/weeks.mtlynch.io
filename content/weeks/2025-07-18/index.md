@@ -41,14 +41,20 @@ _A toy project to teach myself Gleam. I'm trying to write parsers for my old AIM
   - I realized splitting up into a lexer and parser was overkill given how little structure is in the logs.
 - Switch to [Nix for CI](https://codeberg.org/mtlynch/gleam-chat-log-parser/pulls/21)
   - It's slower, but it means using the same environment I'm running locally.
-- [Add drop_until function](https://codeberg.org/mtlynch/gleam-chat-log-parser/pulls/28)
-- [Fold remaining graphemes into ParseState](https://codeberg.org/mtlynch/gleam-chat-log-parser/pulls/27)
+- Added a [`drop_until function`](https://codeberg.org/mtlynch/gleam-chat-log-parser/pulls/28)
+
+  - I had a `read_until` that returned the characters until encountering a stop character, but I was using it in places where I didn't actually need the string; I just wanted to skip until a particular character.
+  - I realized I could create more elegant pipelines if I return a single value instead.
+
+- Fold `remaining_graphemes` [into ParseState](https://codeberg.org/mtlynch/gleam-chat-log-parser/pulls/27)
+  - This feels a bit like cheating functional programming because it's essentially simulating a class with state, but maybe that's allowed?
+- [Swap order](https://codeberg.org/mtlynch/gleam-chat-log-parser/pulls/26) of return values in plaintext parser
+  - It was confusing to pass parameters in opposite order of the return values
 - [Handle conversations that span multiple dates](https://codeberg.org/mtlynch/gleam-chat-log-parser/pulls/22)
 - [Handle logs with seconds precision](https://codeberg.org/mtlynch/gleam-chat-log-parser/pulls/25)
 - [Parse logs from multiple sessions](https://codeberg.org/mtlynch/gleam-chat-log-parser/pulls/23)
 - [Parse sessions with seconds-level precision](https://codeberg.org/mtlynch/gleam-chat-log-parser/pulls/29)
 
-- [Swap order of return values in plaintext parser](https://codeberg.org/mtlynch/gleam-chat-log-parser/pulls/26)
 - [Update tests to include chat medium](https://codeberg.org/mtlynch/gleam-chat-log-parser/pulls/24)
 
 ## [ScreenJournal](https://thescreenjournal.com/)
