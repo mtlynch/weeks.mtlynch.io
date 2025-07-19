@@ -16,8 +16,9 @@ date: "2025-07-18"
 ## [Refactoring English](https://refactoringenglish.com)
 
 - Published new excerpt, ["Underused Techniques for Effective Emails"](https://refactoringenglish.com/chapters/techniques-for-writing-emails/)
+  - It did well [on Lobsters](https://lobste.rs/s/tfauzy/underused_techniques_for_effective) but missed [on HN](https://news.ycombinator.com/item?id=44583368)
 - Emailed 7-8 people who purchased the book to see if they have questions.
-- Tried to solicit
+- Tried to solicit readers to join a one-off writing workshop but couldn't find enough takers
 - Started chapter "Get to the Point"
 - Imported more chapters into the ebook from the free web versions
   - ["Show more pictures"](https://refactoringenglish.com/chapters/write-blog-posts-developers-read/#show-more-pictures)
