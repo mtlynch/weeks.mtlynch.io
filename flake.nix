@@ -29,6 +29,7 @@
       imagemagick = hugo-nixpkgs.legacyPackages.${system}.imagemagick;
       jq = hugo-nixpkgs.legacyPackages.${system}.jq;
       wget = hugo-nixpkgs.legacyPackages.${system}.wget;
+      exiftool = hugo-nixpkgs.legacyPackages.${system}.exiftool;
     in {
       devShells.default = hugo-nixpkgs.legacyPackages.${system}.mkShell {
         packages = [
@@ -39,10 +40,12 @@
           imagemagick
           jq
           wget
+          exiftool
         ];
 
         shellHook = ''
           magick --version | head -n 1 | sed 's/Version: //' | awk '{print $1, $2, $3, $4, $5}'
+          echo "exiftool" "$(exiftool -ver)"
           jq --version
           htmltest --version
           echo "node" "$(node --version)"
