@@ -4,7 +4,7 @@ executors:
     docker:
       - image: cimg/node:18.14.1
 jobs:
-  check-whitespace:
+  check_whitespace:
     docker:
       - image: cimg/base:stable
     resource_class: small
@@ -134,9 +134,9 @@ jobs:
           command: ./node_modules/.bin/netlify deploy --dir=public --site="${NETLIFY_SITE_ID}" --prod
 workflows:
   version: 2
-  test-deploy:
+  test_deploy:
     jobs:
-      - check-whitespace
+      - check_whitespace
       - prettier
       - build
       - check_exif_data
