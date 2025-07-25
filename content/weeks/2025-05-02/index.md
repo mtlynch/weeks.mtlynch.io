@@ -17,6 +17,8 @@ lastmod: 2025-05-03
 
 ## HN Observer
 
+_HN Observer is a tool I'm working on to predict the outcome of submissions to Hacker News based on past historical data._
+
 - Fixed behavior for displaying historical aggregate scores
 - Got chart.js to render times smoothly
   - Previously, it was just rendering time as an opaque value and wasn't generating ticks at sensible places

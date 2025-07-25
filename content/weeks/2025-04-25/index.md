@@ -10,7 +10,9 @@ date: 2025-04-25
 
 - Fixed some of the metadata in the HN Popularity Contest tool
 
-## hn-observer
+## HN Observer
+
+_HN Observer is a tool I'm working on to predict the outcome of submissions to Hacker News based on past historical data._
 
 - Caught errors early when HN API returns invalid JSON
 - Caught error early when HN API returns a null
