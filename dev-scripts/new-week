@@ -231,4 +231,7 @@ fetch_github_prs >> "${WEEK_PATH}"
 # Append Codeberg activity to the generated file
 fetch_codeberg_prs >> "${WEEK_PATH}"
 
+# Make new branch.
+git checkout -b "${PUBLISH_DATE}"
+
 code "${WEEK_PATH}"
