@@ -65,6 +65,8 @@ _A toy project to teach myself Gleam. I'm trying to write parsers for my old AIM
 
 ## HN Observer
 
+_HN Observer is a tool I'm working on to predict the outcome of submissions to Hacker News based on past historical data._
+
 - Instead of tracking time from story submission, switched calculation to total time on front page
 
 ## [PicoShare](https://pico.rocks)

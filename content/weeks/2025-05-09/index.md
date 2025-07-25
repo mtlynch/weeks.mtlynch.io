@@ -17,6 +17,8 @@ date: 2025-05-09
 
 ## HN Observer
 
+_HN Observer is a tool I'm working on to predict the outcome of submissions to Hacker News based on past historical data._
+
 - Adjusted polling rate to cut down disk bloat
 - Fixed aggregate data chart
 - Changed rank to a log scale

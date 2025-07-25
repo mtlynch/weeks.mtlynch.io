@@ -13,7 +13,9 @@ date: 2025-05-30
 - Sent out a draft of the content marketing chapter to readers who pre-ordered
 - Held office hours
 
-## hn-observer
+## HN Observer
+
+_HN Observer is a tool I'm working on to predict the outcome of submissions to Hacker News based on past historical data._
 
 - Added a NixOS module
   - Configured my main system so it always is running hn-observer
