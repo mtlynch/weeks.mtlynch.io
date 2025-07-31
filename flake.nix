@@ -4,8 +4,8 @@
   inputs = {
     flake-utils.url = "github:numtide/flake-utils";
 
-    # 18.14.1 release
-    nodejs-nixpkgs.url = "github:NixOS/nixpkgs/6adf48f53d819a7b6e15672817fa1e78e5f4e84f";
+    # 24.4.1 release
+    nodejs-nixpkgs.url = "github:NixOS/nixpkgs/6027c30c8e9810896b92429f0092f624f7b1aace";
 
     # 0.147.5 release
     hugo-nixpkgs.url = "github:NixOS/nixpkgs/e0042dedfbc9134ef973f64e5c7f56a38cc5cc97";
@@ -23,7 +23,7 @@
   } @ inputs:
     flake-utils.lib.eachDefaultSystem (system: let
       hugo = hugo-nixpkgs.legacyPackages.${system}.hugo;
-      nodejs = nodejs-nixpkgs.legacyPackages.${system}.nodejs-18_x;
+      nodejs = nodejs-nixpkgs.legacyPackages.${system}.nodejs_24;
       htmltest = htmltest-nixpkgs.legacyPackages.${system}.htmltest;
       libxml2 = hugo-nixpkgs.legacyPackages.${system}.libxml2;
       imagemagick = hugo-nixpkgs.legacyPackages.${system}.imagemagick;
