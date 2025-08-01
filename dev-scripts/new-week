@@ -25,9 +25,6 @@ fi
 FRIDAY_DATE=$(date -d "+${DAYS_UNTIL_FRIDAY} days" +%Y-%m-%d)
 readonly FRIDAY_DATE
 
-PUBLISH_DATE=$(date -d "+${DAYS_UNTIL_FRIDAY} days" +%Y-%m-%dT00:00:00%:z)
-readonly PUBLISH_DATE
-
 # Calculate previous Friday for GitHub query
 if [ "$DAY_OF_WEEK" -eq 5 ]; then
     # It's Friday, get last Friday (7 days ago)
@@ -222,6 +219,9 @@ fetch_codeberg_prs() {
     fi
 }
 
+PUBLISH_DATE=$(date -d "+${DAYS_UNTIL_FRIDAY} days" +%Y-%m-%dT00:00:00%:z)
+readonly PUBLISH_DATE
+
 hugo new "${WEEK_PATH}" \
   --clock "${PUBLISH_DATE}"
 
@@ -232,6 +232,6 @@ fetch_github_prs >> "${WEEK_PATH}"
 fetch_codeberg_prs >> "${WEEK_PATH}"
 
 # Make new branch.
-git checkout -b "${PUBLISH_DATE}"
+git checkout -b "${FRIDAY_DATE}"
 
 code "${WEEK_PATH}"
