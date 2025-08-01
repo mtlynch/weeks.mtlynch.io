@@ -4,91 +4,52 @@ date: "2025-08-01"
 
 ## [mtlynch.io](https://mtlynch.io)
 
--
+- Added caveat about [raidz pool flags](https://github.com/mtlynch/mtlynch.io/pull/1534)
+  - A developer from TrueNAS gave me a fairly confusing caveat, so I wanted to include it.
+- Upgraded CI [to nodejs 24.4.1](https://github.com/mtlynch/mtlynch.io/pull/1533)
+  - netlify-cli broke compatibility with 18.x
 
 ## [Refactoring English](https://refactoringenglish.com)
 
--
+- Finished chapter on writing emails and shared it with early access customers
+  - I published [a free excerpt](https://refactoringenglish.com/chapters/techniques-for-writing-emails/) a few weeks ago but this is an extended version.
+- Worked on "Get to the Point" chapter
+- Modified my script for publishing excerpts to publish the files to Bunny CDN
+  - I previously was generating them locally and then uploading them to my personal PicoShare instance by hand.
+- Added markers for pending chapters
+  - [Example](pending.webp)
+  - A reader reported that empty chapters made it a pain to navigate from the table of contents
+- Added a link in each page footer back to the table of contents
+  - [Example](footer-link.webp)
+- Upgraded CI on website to nodejs 24.4.1
+- Reached out to two additional customers.
 
 ## [Michael's weekly updates](https://github.com/mtlynch/weeks.mtlynch.io)
 
--
+- Update the `new-week` script to [make the new git branch](https://github.com/mtlynch/weeks.mtlynch.io/pull/22)
+- Upgraded CI to [node 24.4.1](https://github.com/mtlynch/weeks.mtlynch.io/pull/23)
 
 ## [ScreenJournal](https://thescreenjournal.com/)
 
 _ScreenJournal is basically Goodreads, but for TV and movies. Or letterboxd, but focused on small communities._
 
--
-
-## [fusion](https://github.com/0x2E/fusion)
-
-_fusion is an open-source RSS reader I found when looking for an RSS aggregator to host on my NixOS system. I like that it's written in Go and uses SQLite as a backend, so it's pretty easy to self-host. The maintainer is very responsive to PRs as well._
-
--
-
-## [Talk to Stan](https://talktostan.com)
-
-_Talk to Stan is a tool I'm working on that will respond to templated emails I get from spammy marketers and recruiters with a sequence of templated responses to ask the spammers an endless series of dumb questions._
-
--
+- Added an admin feature to [create password reset links](https://github.com/mtlynch/screenjournal/pull/429)
 
 ## [PicoShare](https://pico.rocks)
 
 _PicoShare is a minimalist web-based file sharing tool I'm working on. I'm often frustrated that I can't just send someone a link directly to a file because every file-sharing service tries to re-encode images/video or wrap their own viewer around other files, so I'm making a simple self-hostable tool that lets you upload files and share them with other people._
 
--
+- Rename [`FileLifetime` to `MaxFileLifetime`](https://github.com/mtlynch/picoshare/pull/701)
+  - I kept getting confused and thinking it was the file's lifetime rather than the server's setting.
+- Modify the upload handler to return the URL [unless the client requests JSON](https://github.com/mtlynch/picoshare/pull/702)
+  - Made expiration field [optional in guest upload](https://github.com/mtlynch/picoshare/pull/700) to make it easier to uplod from command-line utilities
+
+### [resticpy](https://github.com/mtlynch/resticpy)
+
+- Cut the [1.2.2 release](https://github.com/mtlynch/resticpy/releases/tag/1.2.2).
+- Reviewed an external contribution to support [forgetting a specific snapshot id](https://github.com/mtlynch/resticpy/pull/192)
+- Disabled [pylint's design checks](https://github.com/mtlynch/resticpy/pull/193)
 
 ## Misc
 
--
-
-## GitHub Activity
-
-### [mtlynch/mtlynch.io](https://github.com/mtlynch/mtlynch.io)
-
-- [Add caveat about raidz pool flags](https://github.com/mtlynch/mtlynch.io/pull/1534)
-- [Upgrade to nodejs 24.4.1](https://github.com/mtlynch/mtlynch.io/pull/1533)
-
-### [mtlynch/picoshare](https://github.com/mtlynch/picoshare)
-
-- [Make expiration field optional in guest upload](https://github.com/mtlynch/picoshare/pull/700)
-- [Rename FileLifetime to MaxFileLifetime](https://github.com/mtlynch/picoshare/pull/701)
-- [Return the URL unless JSON is requested](https://github.com/mtlynch/picoshare/pull/702)
-
-### [mtlynch/refactoring-english-landing](https://github.com/mtlynch/refactoring-english-landing)
-
-- [Backport ebook changes to website](https://github.com/mtlynch/refactoring-english-landing/pull/210)
-- [Bump to 0.6.4 release](https://github.com/mtlynch/refactoring-english-landing/pull/215)
-- [Bump to version 0.6.3](https://github.com/mtlynch/refactoring-english-landing/pull/214)
-- [Fix table of contents link to passive voice](https://github.com/mtlynch/refactoring-english-landing/pull/212)
-- [Fix typos in emails chapter](https://github.com/mtlynch/refactoring-english-landing/pull/208)
-- [Link to emails in ToC](https://github.com/mtlynch/refactoring-english-landing/pull/213)
-- [Update to 0.6.2 release](https://github.com/mtlynch/refactoring-english-landing/pull/211)
-- [Upgrade to nodejs 24.4.1](https://github.com/mtlynch/refactoring-english-landing/pull/209)
-
-### [mtlynch/resticpy](https://github.com/mtlynch/resticpy)
-
-- [Bump version to 1.2.2](https://github.com/mtlynch/resticpy/pull/194)
-- [Disable pylint's design checks](https://github.com/mtlynch/resticpy/pull/193)
-- [feat: Forget a specific snapshot id](https://github.com/mtlynch/resticpy/pull/192)
-
-### [mtlynch/screenjournal](https://github.com/mtlynch/screenjournal)
-
-- [Create password reset links](https://github.com/mtlynch/screenjournal/pull/429)
-
-### [mtlynch/weeks.mtlynch.io](https://github.com/mtlynch/weeks.mtlynch.io)
-
-- [Make new github branch in new-week](https://github.com/mtlynch/weeks.mtlynch.io/pull/22)
-- [Rename EST_PUBLISH_DATE to PUBLISH_DATE](https://github.com/mtlynch/weeks.mtlynch.io/pull/24)
-- [Upgrade to node 24.4.1](https://github.com/mtlynch/weeks.mtlynch.io/pull/23)
-
-## Codeberg Activity
-
-### [mtlynch/refactoring-english](https://codeberg.org/mtlynch/refactoring-english)
-
-- [Add Get to the Point chapter](https://codeberg.org/mtlynch/refactoring-english/pulls/24)
-- [Add markers for pending chapters](https://codeberg.org/mtlynch/refactoring-english/pulls/31)
-- [Check for correct curly quotes](https://codeberg.org/mtlynch/refactoring-english/pulls/26)
-- [Link back to ToC from footer](https://codeberg.org/mtlynch/refactoring-english/pulls/32)
-- [Tweak blogging intro](https://codeberg.org/mtlynch/refactoring-english/pulls/30)
-- [Upload excerpt to bunny](https://codeberg.org/mtlynch/refactoring-english/pulls/29)
+- Replaced a fire alarm that started going off on false positives.
