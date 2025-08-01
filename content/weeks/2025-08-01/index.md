@@ -14,13 +14,15 @@ date: "2025-08-01"
 - Finished chapter on writing emails and shared it with early access customers
   - I published [a free excerpt](https://refactoringenglish.com/chapters/techniques-for-writing-emails/) a few weeks ago but this is an extended version.
 - Worked on "Get to the Point" chapter
+- 1:1 call with a reader / fellow founder.
 - Modified my script for publishing excerpts to publish the files to Bunny CDN
   - I previously was generating them locally and then uploading them to my personal PicoShare instance by hand.
-- Added markers for pending chapters
+- Indicated in the table of contents which chapters are not yet complete
   - [Example](pending.webp)
   - A reader reported that empty chapters made it a pain to navigate from the table of contents
 - Added a link in each page footer back to the table of contents
   - [Example](footer-link.webp)
+  - Also suggestion from a reader to improve navigability on e-readers
 - Upgraded CI on website to nodejs 24.4.1
 - Reached out to two additional customers.
 
@@ -39,10 +41,11 @@ _ScreenJournal is basically Goodreads, but for TV and movies. Or letterboxd, but
 
 _PicoShare is a minimalist web-based file sharing tool I'm working on. I'm often frustrated that I can't just send someone a link directly to a file because every file-sharing service tries to re-encode images/video or wrap their own viewer around other files, so I'm making a simple self-hostable tool that lets you upload files and share them with other people._
 
-- Rename [`FileLifetime` to `MaxFileLifetime`](https://github.com/mtlynch/picoshare/pull/701)
+- Modified the upload handler to return the URL [unless the client requests JSON](https://github.com/mtlynch/picoshare/pull/702)
+  - The idea is to make it friendly to command-line uploads
+  - I also made the expiration field [optional in guest upload](https://github.com/mtlynch/picoshare/pull/700) to make it easier to uplod from command-line utilities
+- Renamed [`FileLifetime` to `MaxFileLifetime`](https://github.com/mtlynch/picoshare/pull/701)
   - I kept getting confused and thinking it was the file's lifetime rather than the server's setting.
-- Modify the upload handler to return the URL [unless the client requests JSON](https://github.com/mtlynch/picoshare/pull/702)
-  - Made expiration field [optional in guest upload](https://github.com/mtlynch/picoshare/pull/700) to make it easier to uplod from command-line utilities
 
 ### [resticpy](https://github.com/mtlynch/resticpy)
 
@@ -53,3 +56,7 @@ _PicoShare is a minimalist web-based file sharing tool I'm working on. I'm often
 ## Misc
 
 - Replaced a home fire alarm that started going off on false positives.
+  - Including once at 6 AM, oof.
+- Reached out to a independent blogger with unsolicited suggestions.
+  - Fortunately, they were receptive.
+- 1:1 call with another founder.
