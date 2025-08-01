@@ -25,8 +25,8 @@ fi
 FRIDAY_DATE=$(date -d "+${DAYS_UNTIL_FRIDAY} days" +%Y-%m-%d)
 readonly FRIDAY_DATE
 
-EST_PUBLISH_DATE=$(date -d "+${DAYS_UNTIL_FRIDAY} days" +%Y-%m-%dT00:00:00%:z)
-readonly EST_PUBLISH_DATE
+PUBLISH_DATE=$(date -d "+${DAYS_UNTIL_FRIDAY} days" +%Y-%m-%dT00:00:00%:z)
+readonly PUBLISH_DATE
 
 # Calculate previous Friday for GitHub query
 if [ "$DAY_OF_WEEK" -eq 5 ]; then
@@ -223,7 +223,7 @@ fetch_codeberg_prs() {
 }
 
 hugo new "${WEEK_PATH}" \
-  --clock "${EST_PUBLISH_DATE}"
+  --clock "${PUBLISH_DATE}"
 
 # Append GitHub activity to the generated file
 fetch_github_prs >> "${WEEK_PATH}"
