@@ -52,4 +52,4 @@ _PicoShare is a minimalist web-based file sharing tool I'm working on. I'm often
 
 ## Misc
 
-- Replaced a fire alarm that started going off on false positives.
+- Replaced a home fire alarm that started going off on false positives.
