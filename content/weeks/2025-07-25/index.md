@@ -78,7 +78,7 @@ _PicoShare is a minimalist web-based file sharing tool I'm working on. I'm often
 - Had a 1:1 call with a former teammate.
 - Debugged networking issue with my virt-manager VMs.
   - They suddenly stopped being able to access the network.
-  - It turned
+  - It turned out to be a regression in NixOS. Reverting to the last version of nixpkgs fixed the issue.
 - Fixed printing on my home network.
   - The issue turned out to be a firewall rule I screwed up.
   - I also somehow managed to break Internet for my whole network for about an hour in the process.

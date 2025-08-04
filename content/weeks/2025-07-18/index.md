@@ -31,7 +31,7 @@ date: "2025-07-18"
 - Added a favicon to website
 - Fixed the CircleCI badge in the README
 - Changed "Consulting" pages to be ["Editing"](https://refactoringenglish.com/services/blog-editing/) and broke them into different pages
-- Updated the early access pagecompleted chapters](https://github.com/mtlynch/refactoring-english-landing/pull/197)
+- Updated the early access page to show completed chapters
   - [Screenshot](early-access.webp)
 - Updated to Hugo 0.147.5
 
