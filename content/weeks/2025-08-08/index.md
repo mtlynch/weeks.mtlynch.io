@@ -68,3 +68,5 @@ _A toy project to teach myself Gleam. I'm trying to write parsers for my old AIM
 - Cold emailed an indie blogger I like.
 - Listed my old managed switch for sale
   - But then I realized I listed it under the wrong product name, so I canceled and relisted.
+- Reinstalled LeechBlockNG.
+  - I stopped using it because it was causing hangs in Firefox, but now my browser habits are degrading, so I'm giving it another shot.
