@@ -12,6 +12,7 @@ date: "2025-08-08"
 - Continued working on "Get to the Point" chapter
 - Added an acknowledgments chapter
 - Started taking notes about writing for your audience
+- Emailed five readers to see if they have questions about the book.
 
 ## Hit the Front Page of Hacker News
 
@@ -62,3 +63,8 @@ _A toy project to teach myself Gleam. I'm trying to write parsers for my old AIM
 - Took a road trip to visit a friend for their birthday.
 - Downloaded a course I'd purchased.
   - It's by default streaming-only, but I used an LLM to write a scraper that uses yt-dlp to scrape the streaming URLs and download it locally.
+- Got new fire extinguishers.
+  - Realized mine were 12-13 years old.
+- Cold emailed an indie blogger I like.
+- Listed my old managed switch for sale
+  - But then I realized I listed it under the wrong product name, so I canceled and relisted.
